@@ -53,16 +53,76 @@ const Chat: React.FC = () => {
     }
   }, [messages, message]);
 
-  const handleMessageSend = () => {
+  const handleMessageSend = async () => {
     if (message.trim() !== "") {
-      const response = `Demo response to "${message}"`;
+      const userMessage = message;
 
       setMessages((prevMessages) => [
         ...prevMessages,
-        { text: message, sender: "user" },
+        { text: userMessage, sender: "user" },
         { text: "", sender: "space" },
-        { text: response, sender: "bot", liked: false, disliked: false },
       ]);
+
+      try {
+        const baseUrl =
+          "https://flask-hello-world-ahmada14s-projects.vercel.app/solver";
+        const data = { input: userMessage };
+
+        const response = await fetch(baseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        const responseData = await response.json();
+        console.log(responseData); // Logging the full response for debugging
+
+        if (
+          response.status === 200 &&
+          responseData &&
+          responseData.response &&
+          responseData.response.output
+        ) {
+          const botResponse = responseData.response.output;
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { text: botResponse, sender: "bot", liked: false, disliked: false },
+          ]);
+
+          if (responseData.step_response && responseData.step_response.steps) {
+            responseData.step_response.steps.forEach((step: any) => {
+              const stepMessage = `Step ${step.step_number}: ${step.description}\nCalculation: ${step.calculation}`;
+              setMessages((prevMessages) => [
+                ...prevMessages,
+                {
+                  text: stepMessage,
+                  sender: "bot",
+                  liked: false,
+                  disliked: false,
+                },
+              ]);
+            });
+          }
+        } else {
+          throw new Error(
+            `Unexpected response format or status code: ${response.status}`
+          );
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            text: "Sorry, something went wrong.",
+            sender: "bot",
+            liked: false,
+            disliked: false,
+          },
+        ]);
+      }
+
       setMessage("");
     }
   };
@@ -94,7 +154,6 @@ const Chat: React.FC = () => {
 
   return (
     <div className="flex h-screen antialiased text-gray-400 justify-center items-center bg-black">
-      {/* <div className="w-[30%] left-0 bg-black h-[99%] rounded-lg"></div> */}
       <div className="flex flex-col h-full p-6 w-[70%] max-w-screen-md relative bg-black">
         <div className="flex flex-col flex-auto flex-shrink-0 rounded-2xl h-full p-4 ">
           <div
@@ -184,30 +243,31 @@ const Chat: React.FC = () => {
                   overflowY: "hidden",
                   maxHeight: "130px",
                 }}
-                className="w-full border rounded-xl focus:outline-none focus:border-indigo-300 pl-4 pr-10 h-auto bg-transparent border-r border-solid border-gray-400"
+                className="w-full border rounded-xl focus
+                    focus
+                    pl-4 pr-10 h-auto bg-transparent border-r border-solid border-gray-400"
                 rows={1}
                 ref={textAreaRef}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onInput={(e) => {
-                  if (e.target.style) {
-                    e.target.style.height = "auto";
-                    e.target.style.height = e.target.scrollHeight + "px";
-                  }
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = "auto";
+                  target.style.height = target.scrollHeight + "px";
                 }}
               />
               <img
                 loading="lazy"
-                alt="this the snd msg button"
+                alt="this is the send message button"
                 src="https://cdn.builder.io/api/v1/image/assets/TEMP/4afbfacca60be05bc7fabdaad63a97ae59653249d419bd638c52fcd44bb18d8d?apiKey=712222130b354692aa9375ac3c42bcf2&"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-[19px] fill-zinc-50"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-[19px] fill-zinc-50 cursor-pointer"
                 onClick={handleMessageSend}
               />
             </div>
           </div>
           <div className="flex justify-center mt-4 mb-12">
-            <button className="flex items-center justify-center bg-[#B9B1F7] rounded-xl text-white px-4 py-1 flex-shrink-0  ">
+            <button className="flex items-center justify-center bg-[#B9B1F7] rounded-xl text-white px-4 py-1 flex-shrink-0">
               <span>Return to Home</span>
             </button>
           </div>
