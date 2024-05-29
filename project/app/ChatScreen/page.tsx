@@ -6,6 +6,7 @@ import {
   AiOutlineDislike,
   AiFillDislike,
 } from "react-icons/ai";
+import "./style.css";
 
 interface Message {
   text: string;
@@ -16,14 +17,7 @@ interface Message {
 
 const Chat: React.FC = () => {
   const [message, setMessage] = useState<string>("");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      text: "What would you like to know?",
-      sender: "bot",
-      liked: false,
-      disliked: false,
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
 
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -92,18 +86,24 @@ const Chat: React.FC = () => {
           ]);
 
           if (responseData.step_response && responseData.step_response.steps) {
-            responseData.step_response.steps.forEach((step: any) => {
-              const stepMessage = `Step ${step.step_number}: ${step.description}\nCalculation: ${step.calculation}`;
-              setMessages((prevMessages) => [
-                ...prevMessages,
-                {
-                  text: stepMessage,
-                  sender: "bot",
-                  liked: false,
-                  disliked: false,
-                },
-              ]);
-            });
+            const stepsText = responseData.step_response.steps.map(
+              (step: any) => (
+                <div key={step.step_number}>
+                  <p>{`Step ${step.step_number}: ${step.description}`}</p>
+                  <p>{`Calculation: ${step.calculation}`}</p>
+                </div>
+              )
+            );
+
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              {
+                text: stepsText,
+                sender: "bot",
+                liked: false,
+                disliked: false,
+              },
+            ]);
           }
         } else {
           throw new Error(
@@ -153,48 +153,40 @@ const Chat: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen antialiased text-gray-400 justify-center items-center bg-black">
-      <div className="flex flex-col h-full p-6 w-[70%] max-w-screen-md relative bg-black">
-        <div className="flex flex-col flex-auto flex-shrink-0 rounded-2xl h-full p-4 ">
+    <div className="flex h-screen antialiased text-gray-200 justify-center items-center bg-gray-900">
+      <div className="flex flex-col h-full p-6 w-[70%] max-w-screen-md relative bg-gray-900 shadow-lg rounded-xl">
+        <div className="flex flex-col flex-auto flex-shrink-0 rounded-2xl h-full p-4">
           <div
-            className="flex flex-col flex-auto h-full mb-4 overflow-y-auto justify-normal items-center"
+            className="flex flex-col flex-auto h-full mb-4 overflow-y-auto message-container"
             ref={messageContainerRef}
           >
             {messages.map((msg, index) => (
               <div
                 key={index}
-                className={`mr-5 mt-3 flex items-${
-                  msg.sender === "user" ? "end" : "start"
+                className={`flex w-full mt-3 ${
+                  msg.sender === "user" ? "justify-start" : "justify-start"
                 }`}
-                style={{ width: "100%", maxWidth: "70%" }}
               >
-                {msg.sender === "bot" && (
-                  <div style={{ display: "flex", gap: "1rem" }}>
-                    <div>
-                      <img
-                        loading="lazy"
-                        alt="this is the chatbot icon"
-                        src="./asserts/mathgenie.png"
-                        className="w-[40cdpx] h-[40px] mr-2 rounded-full"
-                      />
-                    </div>
-                    <div
-                      className="bg-white rounded-lg p-3"
-                      ref={responseDivRef}
-                    >
-                      <p>{msg.text}</p>
+                <div className="flex items-center">
+                  <div
+                    className={`${
+                      msg.sender === "user" ? "" : "bg-gray-700"
+                    } text-white rounded-lg p-3 shadow-md`}
+                  >
+                    <p>{msg.text}</p>
+                    {msg.sender === "bot" && (
                       <div className="flex justify-end mt-2">
                         <button
-                          className={`text-black mr-2 ${
-                            msg.liked ? "text-gray-500" : ""
+                          className={`mr-2 ${
+                            msg.liked ? "text-blue-400" : "text-gray-400"
                           }`}
                           onClick={() => handleLikeClick(index)}
                         >
                           {msg.liked ? <AiFillLike /> : <AiOutlineLike />}
                         </button>
                         <button
-                          className={`text-black ${
-                            msg.disliked ? "text-gray-500" : ""
+                          className={`${
+                            msg.disliked ? "text-red-400" : "text-gray-400"
                           }`}
                           onClick={() => handleDislikeClick(index)}
                         >
@@ -205,33 +197,16 @@ const Chat: React.FC = () => {
                           )}
                         </button>
                       </div>
-                    </div>
+                    )}
                   </div>
-                )}
-                {msg.sender === "user" && (
-                  <div
-                    className={`flex-grow ml-2 ${
-                      msg.sender === "bot"
-                        ? "bg-white rounded-lg px-4 py-2 mb-2 max-w-xs message-container"
-                        : ""
-                    }`}
-                    ref={msg.sender === "bot" ? responseDivRef : null}
-                    style={{ height: "auto" }}
-                  >
-                    <span
-                      className={
-                        msg.sender === "bot" ? "message-text" : "pl-11"
-                      }
-                    >
-                      {msg.text}
-                    </span>
-                  </div>
-                )}
+                </div>
               </div>
             ))}
           </div>
-          <div className="flex flex-col items-center rounded-xl bg-transparent w-full px-4 py-2">
-            <div className="relative w-full max-w-sm">
+          <div className="flex flex-col items-center rounded-xl bg-gray-800 w-full px-4 py-2">
+            <div className="relative w-[100%] max-w-md">
+              {" "}
+              {/* Changed max-w-sm to max-w-md */}
               <textarea
                 placeholder="Type your message..."
                 style={{
@@ -243,9 +218,7 @@ const Chat: React.FC = () => {
                   overflowY: "hidden",
                   maxHeight: "130px",
                 }}
-                className="w-full border rounded-xl focus
-                    focus
-                    pl-4 pr-10 h-auto bg-transparent border-r border-solid border-gray-400"
+                className="w-full border rounded-xl focus:outline-none bg-gray-700"
                 rows={1}
                 ref={textAreaRef}
                 value={message}
@@ -259,16 +232,17 @@ const Chat: React.FC = () => {
               />
               <img
                 loading="lazy"
-                alt="this is the send message button"
+                alt="send message button"
                 src="https://cdn.builder.io/api/v1/image/assets/TEMP/4afbfacca60be05bc7fabdaad63a97ae59653249d419bd638c52fcd44bb18d8d?apiKey=712222130b354692aa9375ac3c42bcf2&"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-[19px] fill-zinc-50 cursor-pointer"
+                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-[19px] cursor-pointer"
                 onClick={handleMessageSend}
               />
             </div>
           </div>
-          <div className="flex justify-center mt-4 mb-12">
-            <button className="flex items-center justify-center bg-[#B9B1F7] rounded-xl text-white px-4 py-1 flex-shrink-0">
-              <span>Return to Home</span>
+
+          <div className="flex justify-center mt-4">
+            <button className="flex items-center justify-center bg-purple-600 rounded-xl text-white px-4 py-2 shadow-md">
+              <span>Test Me</span>
             </button>
           </div>
         </div>
