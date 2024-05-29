@@ -1,0 +1,27 @@
+/* Add this CSS to your existing styles or create a new CSS file */
+
+.message-container {
+    flex: 1;
+    padding-left: 2px;
+    margin-bottom: 1rem; /* Add margin bottom for spacing */
+    overflow-y: auto; /* Always show vertical scrollbar */
+    scrollbar-width: thin; /* Thin scrollbar */
+    scrollbar-color: #4b5563 #2d3748; /* Scrollbar track and thumb color */
+  }
+  
+  /* Customize scrollbar track */
+  .message-container::-webkit-scrollbar-track {
+    background-color: #2d3748; /* Scrollbar track color */
+  }
+  
+  /* Customize scrollbar thumb */
+  .message-container::-webkit-scrollbar-thumb {
+    background-color: #4b5563; /* Scrollbar thumb color */
+    border-radius: 6px; /* Rounded corners */
+  }
+  
+  /* Hide scrollbar buttons (arrows) */
+  .message-container::-webkit-scrollbar-button {
+    display: none;
+  }
+  
