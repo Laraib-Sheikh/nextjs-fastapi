@@ -3,8 +3,6 @@ import Image from "next/image";
 import { useState, FormEvent, ChangeEvent } from "react"; // Import useState, FormEvent, and ChangeEvent for managing form state and event types
 import bannerImage from "../../public/asserts/Signup_Vector.png";
 
-
-
 export default function Signup(): JSX.Element {
   // State for form inputs
   const [email, setEmail] = useState<string>("");
@@ -14,17 +12,40 @@ export default function Signup(): JSX.Element {
   // Form submission handler
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    // Add your form submission logic here
-    console.log("Form submitted!");
+    fetch(
+      "https://flask-hello-world-ahmada14s-projects.vercel.app/user/createUser",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password, points: 0 }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success") {
+          console.log("User created successfully");
+        } else {
+          alert("Invalid email or password");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   };
 
   return (
     <div className="flex flex-col sm:flex-row items-center justify-center min-h-screen bg-cover bg-center bg-Desktop">
-      
       {/* Desktop view */}
       <div className="desktop-view flex flex-col justify-center mr-1 pl-3 sm:flex-row">
         <div className="image-container flex flex-col items-center justify-center">
-          <Image src={bannerImage} width={400} height={400} alt="Signup Banner" />
+          <Image
+            src={bannerImage}
+            width={400}
+            height={400}
+            alt="Signup Banner"
+          />
           <h1 className="text-white text-5xl mt-10 animate-bounce transition-all duration-500">
             Roll the Carpet!
           </h1>
@@ -55,7 +76,9 @@ export default function Signup(): JSX.Element {
                       className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       placeholder="name@company.com"
                       value={email}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setEmail(e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -73,7 +96,9 @@ export default function Signup(): JSX.Element {
                       placeholder="*"
                       className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       value={password}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setPassword(e.target.value)
+                      }
                       required
                     />
                   </div>
@@ -91,7 +116,9 @@ export default function Signup(): JSX.Element {
                       placeholder="*"
                       className="bg-gray-50 border border-gray-300 text-gray-900 sm:text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
                       value={confirmPassword}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                        setConfirmPassword(e.target.value)
+                      }
                       required
                     />
                   </div>
