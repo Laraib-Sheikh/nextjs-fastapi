@@ -12,13 +12,27 @@ export default function Login(): JSX.Element {
 
   const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-
-    // Simple login logic (hardcoded values or simple validation)
-    if (email === "laraib.ahhmad@gmail.com" && password === "laraib901") {
-      setIsLoggedIn(true); // Set login status to true
-    } else {
-      alert("Invalid email or password");
-    }
+    fetch(
+      "https://flask-hello-world-ahmada14s-projects.vercel.app/user/getUser",
+      {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    )
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.status === "success") {
+          setIsLoggedIn(true); // Set login status to true
+        } else {
+          alert("Invalid email or password");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
   };
 
   if (isLoggedIn) {
