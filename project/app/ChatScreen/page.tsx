@@ -9,7 +9,7 @@ import {
 import "./style.css";
 
 interface Message {
-  text: string;
+  text: string | JSX.Element;
   sender: "user" | "bot" | "space";
   liked?: boolean;
   disliked?: boolean;
@@ -18,6 +18,9 @@ interface Message {
 const Chat: React.FC = () => {
   const [message, setMessage] = useState<string>("");
   const [messages, setMessages] = useState<Message[]>([]);
+  const [buttonText, setButtonText] = useState<string>("Test Me");
+  const [showSendIcon, setShowSendIcon] = useState<boolean>(true);
+  const [isSolving, setIsSolving] = useState<boolean>(false);
 
   const messageContainerRef = useRef<HTMLDivElement>(null);
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
@@ -59,7 +62,7 @@ const Chat: React.FC = () => {
 
       try {
         const baseUrl =
-          "https://flask-hello-world-ahmada14s-projects.vercel.app/solver";
+          "https://flask-hello-world-ahmada14s-projects.vercel.app/solver/solve";
         const data = { input: userMessage };
 
         const response = await fetch(baseUrl, {
@@ -82,7 +85,19 @@ const Chat: React.FC = () => {
           const botResponse = responseData.response.output;
           setMessages((prevMessages) => [
             ...prevMessages,
-            { text: botResponse, sender: "bot", liked: false, disliked: false },
+            {
+              text: (
+                <div>
+                  <p>
+                    <strong>Input:</strong> {userMessage}
+                  </p>
+                  <p>{botResponse}</p>
+                </div>
+              ),
+              sender: "bot",
+              liked: false,
+              disliked: false,
+            },
           ]);
 
           if (responseData.step_response && responseData.step_response.steps) {
@@ -127,6 +142,159 @@ const Chat: React.FC = () => {
     }
   };
 
+  const handleTestMe = async () => {
+    if (isSolving) {
+      // Submit the user's solution
+      const baseUrl =
+        "https://flask-hello-world-ahmada14s-projects.vercel.app/solver/get_step_response_eval";
+      const data = { input: message };
+
+      try {
+        const response = await fetch(baseUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        });
+
+        const responseData = await response.json();
+
+        if (
+          response.status === 200 &&
+          responseData &&
+          responseData.response &&
+          responseData.response.output
+        ) {
+          const botResponse = responseData.response.output;
+          const obtainedPoints = responseData.step_response.points;
+          const totalPoints = responseData.total_points;
+          const stepsText = responseData.step_response.steps.map(
+            (step: any) => (
+              <div key={step.step_number}>
+                <p>{`Step ${step.step_number}: ${step.description}`}</p>
+                <p>{`Calculation: ${step.calculation}`}</p>
+              </div>
+            )
+          );
+
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              text: (
+                <div>
+                  <p>
+                    <strong>Input:</strong> {message}
+                  </p>
+                  <p>{botResponse}</p>
+                </div>
+              ),
+              sender: "bot",
+              liked: false,
+              disliked: false,
+            },
+            { text: stepsText, sender: "bot", liked: false, disliked: false },
+            {
+              text: (
+                <div>
+                  <p>{`Obtained Points: ${obtainedPoints}`}</p>
+                  <p>{`Total Points: ${totalPoints}`}</p>
+                </div>
+              ),
+              sender: "bot",
+              liked: false,
+              disliked: false,
+            },
+          ]);
+        } else {
+          throw new Error(
+            `Unexpected response format or status code: ${response.status}`
+          );
+        }
+      } catch (error) {
+        console.error("Error sending message:", error);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            text: "Sorry, something went wrong.",
+            sender: "bot",
+            liked: false,
+            disliked: false,
+          },
+        ]);
+      }
+
+      setMessage("");
+      setButtonText("Test Me");
+      setShowSendIcon(true);
+      setIsSolving(false);
+    } else {
+      // Get a new question
+      try {
+        // Hardcoded user ID for demonstration purposes
+        const userId = "544";
+
+        const response = await fetch(
+          "https://flask-hello-world-ahmada14s-projects.vercel.app/solver/get_question",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId }),
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(
+            `Failed to fetch question. Status: ${response.status}`
+          );
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          throw new Error("Unexpected response format. Expected JSON.");
+        }
+
+        const responseData = await response.json();
+
+        if (
+          responseData &&
+          responseData.response &&
+          responseData.response.question
+        ) {
+          let botQuestion =
+            responseData.response.question + " Submit your answer";
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              text: botQuestion,
+              sender: "bot",
+              liked: false,
+              disliked: false,
+            },
+          ]);
+          setButtonText("Submit");
+          setShowSendIcon(false);
+          setIsSolving(true);
+        } else {
+          throw new Error("Unexpected response format. Missing question.");
+        }
+      } catch (error) {
+        console.error("Error fetching question:", error);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            text: "Sorry, something went wrong while fetching the question.",
+            sender: "bot",
+            liked: false,
+            disliked: false,
+          },
+        ]);
+      }
+    }
+  };
+
   const handleLikeClick = (index: number) => {
     setMessages((prevMessages) =>
       prevMessages.map((msg, i) =>
@@ -155,11 +323,8 @@ const Chat: React.FC = () => {
   return (
     <div className="flex h-screen antialiased text-gray-200 justify-center items-center bg-gray-900">
       <div className="flex flex-col h-full p-6 w-[70%] max-w-screen-md relative bg-gray-900 shadow-lg rounded-xl">
-        <div className="flex flex-col flex-auto flex-shrink-0 rounded-2xl h-full p-4">
-          <div
-            className="flex flex-col flex-auto h-full mb-4 overflow-y-auto message-container"
-            ref={messageContainerRef}
-          >
+        <div className="flex flex-col h-full overflow-x-auto mb-4">
+          <div className="flex flex-col h-full" ref={messageContainerRef}>
             {messages.map((msg, index) => (
               <div
                 key={index}
@@ -230,19 +395,24 @@ const Chat: React.FC = () => {
                   target.style.height = target.scrollHeight + "px";
                 }}
               />
-              <img
-                loading="lazy"
-                alt="send message button"
-                src="https://cdn.builder.io/api/v1/image/assets/TEMP/4afbfacca60be05bc7fabdaad63a97ae59653249d419bd638c52fcd44bb18d8d?apiKey=712222130b354692aa9375ac3c42bcf2&"
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 w-[19px] cursor-pointer"
-                onClick={handleMessageSend}
-              />
+              {showSendIcon && (
+                <img
+                  loading="lazy"
+                  alt="send message button"
+                  src="https://cdn.builder.io/api/v1/image/assets/TEMP/4afbfacca60be05bc7fabdaad63a97ae59653249d419bd638c52fcd44bb18d8d?apiKey=712222130b354692aa9375ac3c42bcf2&"
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 w-[19px] cursor-pointer"
+                  onClick={handleMessageSend}
+                />
+              )}
             </div>
           </div>
 
           <div className="flex justify-center mt-4">
-            <button className="flex items-center justify-center bg-purple-600 rounded-xl text-white px-4 py-2 shadow-md">
-              <span>Test Me</span>
+            <button
+              className="flex items-center justify-center bg-purple-600 rounded-xl text-white px-4 py-2 shadow-md"
+              onClick={handleTestMe}
+            >
+              <span>{buttonText}</span>
             </button>
           </div>
         </div>
